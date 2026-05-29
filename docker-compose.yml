@@ -1,0 +1,63 @@
+services:
+  db:
+    image: mysql:8.0
+
+    environment:
+      MYSQL_DATABASE: dbs_prmed
+      MYSQL_ROOT_PASSWORD: root
+
+    ports:
+      - "3307:3306"
+
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      retries: 5
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    restart: always
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: root
+    depends_on:
+      - db
+  backend:
+    build:
+      context: ./medical-platform-backend
+      dockerfile: ../backend.Dockerfile
+
+    ports:
+      - "8080:8080"
+
+    environment:
+      env_file:
+        - .env
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./healthcare-app-frontend
+      dockerfile: ../frontend.Dockerfile
+      args:
+        VITE_API_URL: ""
+        VITE_WS_URL: ""
+
+    ports:
+      - "80:80"
+
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
