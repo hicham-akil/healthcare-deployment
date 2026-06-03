@@ -29,16 +29,24 @@ services:
       PMA_PASSWORD: root
     depends_on:
       - db
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"    
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+        
   backend:
     build:
       context: ./medical-platform-backend
-      dockerfile: ../backend.Dockerfile
+      dockerfile: backend.Dockerfile
 
     ports:
       - "8080:8080"
 
-    environment:
-      env_file:
+    env_file:
         - .env
 
     depends_on:
@@ -48,7 +56,7 @@ services:
   frontend:
     build:
       context: ./healthcare-app-frontend
-      dockerfile: ../frontend.Dockerfile
+      dockerfile: frontend.Dockerfile
       args:
         VITE_API_URL: ""
         VITE_WS_URL: ""
@@ -61,3 +69,4 @@ services:
 
 volumes:
   mysql_data:
+  redis_data:  
